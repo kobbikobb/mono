@@ -4,6 +4,8 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=scripts/lib.sh
+source "$root/scripts/lib.sh"
 image="users-api:dev"
 context="kind-kind"
 
@@ -62,11 +64,15 @@ kubectl rollout restart deployment/api
 kubectl rollout status deployment/api
 
 echo "Waiting for the ingress address..."
+target=""
 for _ in $(seq 1 30); do
-  if kubectl get ingress api -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null | grep -q .; then
-    break
-  fi
+  target="$(api_target)"
+  [[ -n "$target" ]] && break
   sleep 2
 done
 
-echo "API: $(kubectl get ingress api -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null)/api/users"
+if [[ -n "$target" ]]; then
+  echo "API: http://$target/api/users"
+else
+  echo "The api ingress has no reachable address. Is 'cloud-provider-kind' running?" >&2
+fi

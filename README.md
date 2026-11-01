@@ -18,6 +18,10 @@ Start the ingress controller in its own terminal:
 
     sudo cloud-provider-kind
 
+With colima, `sudo` drops `DOCKER_HOST`, so pass the socket explicitly:
+
+    sudo -E DOCKER_HOST="unix://$HOME/.colima/default/docker.sock" cloud-provider-kind
+
 ## Linux
 
 Install Docker Engine, kubectl and terraform, then kind:
