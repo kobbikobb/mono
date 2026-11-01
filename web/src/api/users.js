@@ -1,13 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-const getUsers = () => fetch('/api/users').then((res) => res.json());
+const json = (res) => {
+  if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+  return res.json();
+};
+
+const getUsers = () => fetch('/api/users').then(json);
 
 const addUser = (name) =>
   fetch('/api/users', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name }),
-  }).then((res) => res.json());
+  }).then(json);
 
 export const useUsers = () => useQuery({ queryKey: ['users'], queryFn: getUsers });
 
