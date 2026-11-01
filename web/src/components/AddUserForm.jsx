@@ -14,7 +14,7 @@ export default function AddUserForm() {
     <form onSubmit={submit}>
       <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" required />
       <button>Add</button>
-      {isError && <p>Could not add user</p>}
+      {isError && <p className="error">Could not add user</p>}
     </form>
   );
 }
