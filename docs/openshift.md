@@ -4,8 +4,8 @@ The [Developer Sandbox](https://developers.redhat.com/developer-sandbox) is a fr
 shared OpenShift cluster from Red Hat. It enforces the restricted security policy
 (arbitrary UID, no privileges), so it is a good check that the images and chart work on OpenShift.
 
-Total time: about 30-45 minutes the first time, including sign-up, verification and reading each
-step. With an existing sandbox and the tools installed, about 10 minutes.
+Total time: about 15-20 minutes the first time (sign-up and sandbox start take most of it).
+With an existing sandbox and the tools installed, about 5 minutes.
 
 ## Prerequisites
 
