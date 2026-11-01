@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Shared helpers for the local scripts.
 
-# Prints a host-reachable "host:port" for the mono ingress, or nothing.
+# Prints a host-reachable "host:port" for the mono Ingress or Route, or nothing.
 # macOS/Windows run containers in a VM, so the ingress IP is not reachable and
 # cloud-provider-kind publishes the gateway on a host port instead.
 api_target() {
@@ -15,6 +15,22 @@ api_target() {
         printf 'localhost:%s' "$hostport"
         return
       fi
+    fi
+  fi
+
+  if command -v kubectl >/dev/null; then
+    local host port
+    host=$(kubectl -n mono get route mono \
+      -o jsonpath='{.status.ingress[0].host}' 2>/dev/null || true)
+    if [[ -n "$host" ]]; then
+      if [[ "$(kubectl config current-context 2>/dev/null)" == microshift ]] &&
+        command -v docker >/dev/null; then
+        local mapping
+        mapping=$(docker port microshift 80/tcp 2>/dev/null | head -1 || true)
+        port="${mapping##*:}"
+      fi
+      printf '%s%s' "$host" "${port:+:$port}"
+      return
     fi
   fi
 
