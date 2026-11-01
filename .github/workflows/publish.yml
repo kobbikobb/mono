@@ -24,6 +24,8 @@ jobs:
         with:
           context: ${{ matrix.image }}
           push: true
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,scope=${{ matrix.image }},mode=max
           tags: |
             ghcr.io/${{ github.repository }}/${{ matrix.image }}:${{ github.sha }}
             ghcr.io/${{ github.repository }}/${{ matrix.image }}:latest
