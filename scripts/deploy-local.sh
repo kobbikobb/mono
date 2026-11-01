@@ -13,7 +13,11 @@ kind get clusters | grep -qx kind || { echo "No kind cluster named 'kind'. Run: 
 ensure_ingress_controller() {
   if [[ "$(uname -s)" != "Linux" ]]; then
     if ! pgrep -qf cloud-provider-kind; then
-      echo "Start the ingress controller in another terminal: sudo \"\$(command -v cloud-provider-kind)\"" >&2
+      if command -v cloud-provider-kind >/dev/null; then
+        echo "Start the ingress controller in another terminal: sudo cloud-provider-kind" >&2
+      else
+        echo "Install cloud-provider-kind (brew install cloud-provider-kind) and run: sudo cloud-provider-kind" >&2
+      fi
     fi
     return
   fi
