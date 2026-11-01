@@ -48,7 +48,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: helm lint charts/mono
-      - run: helm template mono charts/mono --set ingress.enabled=true > /dev/null
+      - run: helm template mono charts/mono --set ingress.enabled=true,postgres.enabled=true > /dev/null
 
   e2e-kind:
     runs-on: ubuntu-latest
@@ -77,6 +77,8 @@ jobs:
           --set api.image.repository=mono-api,api.image.tag=ci
           --set web.image.repository=mono-web,web.image.tag=ci
           --set ingress.enabled=true,ingress.className=nginx
+          --set postgres.enabled=true
+      - run: kubectl -n mono exec deploy/mono-postgres -- psql -U mono -c 'select 1'
       # OpenShift runs containers with an arbitrary UID; the images must not depend on a fixed one.
       - run: |
           for d in api web; do
