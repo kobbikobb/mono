@@ -1,0 +1,17 @@
+api:
+  image:
+    repository: ghcr.io/kobbikobb/mono/api
+    tag: latest
+  replicas: 1
+
+web:
+  image:
+    repository: ghcr.io/kobbikobb/mono/web
+    tag: latest
+  replicas: 1
+
+# On OpenShift an Ingress is converted to a Route automatically.
+ingress:
+  enabled: false
+  className: ""
+  host: ""
