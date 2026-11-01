@@ -60,16 +60,20 @@ jobs:
       - uses: helm/kind-action@v1
         with:
           cluster_name: kind
+          config: .github/kind.yaml
       - run: |
           docker build -t mono-api:ci api
           docker build -t mono-web:ci web
           kind load docker-image mono-api:ci mono-web:ci
+      - run: |
+          kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
+          kubectl wait -n ingress-nginx --for=condition=ready pod -l app.kubernetes.io/component=controller --timeout=120s
       - run: >
           helm install mono charts/mono --wait --timeout 120s
           --set api.image.repository=mono-api,api.image.tag=ci
           --set web.image.repository=mono-web,web.image.tag=ci
+          --set ingress.enabled=true,ingress.className=nginx
       - run: |
-          kubectl port-forward svc/mono-web 8080:8080 &
           timeout 30 sh -c 'until curl -sf localhost:8080/api/users; do sleep 1; done'
       - run: npm ci
         working-directory: e2e
