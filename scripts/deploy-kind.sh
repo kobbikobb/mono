@@ -49,18 +49,8 @@ docker build -t "$web_image" "$root/web"
 kubectl config use-context "$context"
 kind load docker-image "$api_image" "$web_image" --name kind
 
-tf_vars=(-var "image_tag=dev")
 terraform -chdir="$root/terraform" init -input=false
-set +e
-terraform -chdir="$root/terraform" plan -input=false -detailed-exitcode "${tf_vars[@]}"
-plan_status=$?
-set -e
-
-case "$plan_status" in
-  0) echo "No terraform changes." ;;
-  2) terraform -chdir="$root/terraform" apply -input=false -auto-approve "${tf_vars[@]}" ;;
-  *) exit "$plan_status" ;;
-esac
+terraform -chdir="$root/terraform" apply -input=false -auto-approve -var image_tag=dev
 
 # The tag is always :dev, so a rebuilt image only reaches the pod after a restart.
 kubectl rollout restart deployment/mono-api deployment/mono-web

@@ -54,5 +54,5 @@ Runs the api and web containers; web is at http://localhost:8080.
 
 ## Without ingress
 
-    kubectl port-forward deployment/api 3000:3000
+    kubectl port-forward deployment/mono-api 3000:3000
     curl localhost:3000/api/users
