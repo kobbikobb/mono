@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# Builds the API image, loads it into kind, applies terraform and makes sure the
+# Builds the images, loads them into kind, applies terraform (helm_release) and makes sure the
 # cloud-provider-kind ingress controller is running.
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 # shellcheck source=scripts/lib.sh
 source "$root/scripts/lib.sh"
-image="users-api:dev"
+api_image="mono-api:dev"
+web_image="mono-web:dev"
 context="kind-kind"
 
 command -v kind >/dev/null || { echo "kind is not installed" >&2; exit 1; }
@@ -42,26 +43,29 @@ ensure_ingress_controller() {
 
 ensure_ingress_controller
 
-docker build -t "$image" "$root/api"
+docker build -t "$api_image" "$root/api"
+docker build -t "$web_image" "$root/web"
 
 kubectl config use-context "$context"
-kind load docker-image "$image" --name kind
+kind load docker-image "$api_image" "$web_image" --name kind
 
+tf_vars=(-var "api_image=$api_image" -var "web_image=$web_image")
 terraform -chdir="$root/terraform" init -input=false
 set +e
-terraform -chdir="$root/terraform" plan -input=false -detailed-exitcode
+terraform -chdir="$root/terraform" plan -input=false -detailed-exitcode "${tf_vars[@]}"
 plan_status=$?
 set -e
 
 case "$plan_status" in
   0) echo "No terraform changes." ;;
-  2) terraform -chdir="$root/terraform" apply -input=false -auto-approve ;;
+  2) terraform -chdir="$root/terraform" apply -input=false -auto-approve "${tf_vars[@]}" ;;
   *) exit "$plan_status" ;;
 esac
 
 # The tag is always :dev, so a rebuilt image only reaches the pod after a restart.
-kubectl rollout restart deployment/api
-kubectl rollout status deployment/api
+kubectl rollout restart deployment/mono-api deployment/mono-web
+kubectl rollout status deployment/mono-api
+kubectl rollout status deployment/mono-web
 
 echo "Waiting for the ingress address..."
 target=""
@@ -72,7 +76,7 @@ for _ in $(seq 1 30); do
 done
 
 if [[ -n "$target" ]]; then
-  echo "API: http://$target/api/users"
+  echo "Web: http://$target  API: http://$target/api/users"
 else
-  echo "The api ingress has no reachable address. Is 'cloud-provider-kind' running?" >&2
+  echo "The mono ingress has no reachable address. Is 'cloud-provider-kind' running?" >&2
 fi

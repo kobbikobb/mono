@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Shared helpers for the local scripts.
 
-# Prints a host-reachable "host:port" for the api ingress, or nothing.
+# Prints a host-reachable "host:port" for the mono ingress, or nothing.
 # macOS/Windows run containers in a VM, so the ingress IP is not reachable and
 # cloud-provider-kind publishes the gateway on a host port instead.
 api_target() {
@@ -24,9 +24,9 @@ api_target() {
 
   if command -v kubectl >/dev/null; then
     local addr
-    addr=$(kubectl get ingress api -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
+    addr=$(kubectl get ingress mono -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
     if [[ -z "$addr" ]]; then
-      addr=$(kubectl get ingress api -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+      addr=$(kubectl get ingress mono -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
     fi
     if [[ -n "$addr" ]]; then
       printf '%s' "$addr"

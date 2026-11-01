@@ -1,85 +1,50 @@
 terraform {
   required_providers {
-    kubernetes = {
-      source  = "hashicorp/kubernetes",
+    helm = {
+      source  = "hashicorp/helm"
       version = "~> 3.0"
     }
   }
 }
 
-provider "kubernetes" {
-  config_path = pathexpand("~/.kube/config")
-}
-
-resource "kubernetes_deployment_v1" "api" {
-  metadata {
-    name = "api"
-  }
-
-  spec {
-    replicas = 1
-
-    selector {
-      match_labels = { app = "api" }
-    }
-
-    template {
-      metadata {
-        labels = { app = "api" }
-      }
-      spec {
-        container {
-          name              = "api"
-          image             = "users-api:dev"
-          image_pull_policy = "IfNotPresent"
-
-          port {
-            container_port = 3000
-          }
-        }
-      }
-    }
+provider "helm" {
+  kubernetes = {
+    config_path = pathexpand("~/.kube/config")
   }
 }
 
-resource "kubernetes_service_v1" "api" {
-  metadata {
-    name = "api"
-  }
-
-  spec {
-    selector = { app = "api" }
-
-    port {
-      port        = 3000
-      target_port = 3000
-    }
-  }
+# A customer would point this at the published chart, e.g. oci://ghcr.io/kobbikobb/charts/mono
+variable "chart" {
+  default = "../charts/mono"
 }
 
-resource "kubernetes_ingress_v1" "api" {
-  metadata {
-    name = "api"
-  }
+# Empty keeps the chart's default images (ghcr.io/kobbikobb/mono/*:latest).
+variable "api_image" {
+  default = ""
+}
 
-  spec {
-    rule {
-      http {
-        path {
-          path      = "/api"
-          path_type = "Prefix"
+variable "web_image" {
+  default = ""
+}
 
-          backend {
-            service {
-              name = kubernetes_deployment_v1.api.metadata[0].name
+locals {
+  api_image = split(":", var.api_image)
+  web_image = split(":", var.web_image)
+}
 
-              port {
-                number = 3000
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+resource "helm_release" "mono" {
+  name  = "mono"
+  chart = var.chart
+
+  set = concat(
+    [{ name = "ingress.enabled", value = "true" }],
+    var.api_image == "" ? [] : [
+      { name = "api.image.repository", value = local.api_image[0] },
+      { name = "api.image.tag", value = local.api_image[1] },
+    ],
+    var.web_image == "" ? [] : [
+      { name = "web.image.repository", value = local.web_image[0] },
+      { name = "web.image.tag", value = local.web_image[1] },
+    ],
+  )
 }

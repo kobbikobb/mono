@@ -1,7 +1,7 @@
 # mono
 
-A small Fastify API deployed to a local [kind](https://kind.sigs.k8s.io/) cluster
-with Terraform and exposed through `cloud-provider-kind`.
+A small Fastify API and React web app deployed to a local [kind](https://kind.sigs.k8s.io/)
+cluster with Terraform (installing the Helm chart) and exposed through `cloud-provider-kind`.
 
 Requires Docker, kubectl, terraform, and **kind v0.33+**. Its default node image
 is Kubernetes 1.37; `cloud-provider-kind` needs the `ServiceCIDR` API, which only
@@ -42,8 +42,8 @@ Run the ingress controller as a container (no `sudo`):
     ./scripts/deploy-kind.sh
     ./scripts/curl-api.sh [path]
 
-`deploy-kind.sh` builds the image, loads it into kind, applies Terraform,
-restarts the API and waits for the ingress address. On Linux it also starts the
+`deploy-kind.sh` builds the images, loads them into kind, applies Terraform,
+restarts both deployments and waits for the ingress address. On Linux it also starts the
 controller container if needed.
 
 ## Docker Compose
