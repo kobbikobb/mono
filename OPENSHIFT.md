@@ -8,7 +8,8 @@ shared OpenShift cluster from Red Hat. It enforces the restricted security polic
 
 - A Red Hat account (free).
 - [`oc`](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/cli_tools/openshift-cli-oc) and [`helm`](https://helm.sh/docs/intro/install/) installed.
-- The images `ghcr.io/kobbikobb/mono/api` and `ghcr.io/kobbikobb/mono/web` must be **public**
+- The images `ghcr.io/kobbikobb/mono/api` and `ghcr.io/kobbikobb/mono/web`, and the chart
+  `ghcr.io/kobbikobb/charts/mono`, must be **public**
   (GitHub package settings → Change visibility). Packages are private by default.
 
 ## Steps
@@ -25,9 +26,9 @@ shared OpenShift cluster from Red Hat. It enforces the restricted security polic
 
         oc project
 
-4. Install the chart from this repo:
+4. Install the published chart:
 
-        helm install mono ./charts/mono --set ingress.enabled=true
+        helm install mono oci://ghcr.io/kobbikobb/charts/mono --set ingress.enabled=true
 
    OpenShift converts the Ingress into a Route and generates a hostname.
 
@@ -45,7 +46,7 @@ shared OpenShift cluster from Red Hat. It enforces the restricted security polic
 
 ## Troubleshooting
 
-- `ImagePullBackOff`: the ghcr.io packages are still private.
+- `ImagePullBackOff`: a ghcr.io package is still private.
 - Pod rejected by a security policy: check `oc get events`; the containers must run as non-root
   without fixed UIDs.
 - Route missing: `oc get ingress,route` and make sure `ingress.enabled=true`.
