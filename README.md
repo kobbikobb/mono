@@ -31,15 +31,21 @@ Enable exactly one of `ingress` or `route`. Key values:
 
 Run the API and UI together with Docker Compose:
 
-    docker compose up --build
+    ./scripts/deploy-docker.sh
 
 The UI is at http://localhost:8080 and proxies `/api` to the API. The Helm chart
 deploys the API only.
 
+## Without ingress
+
+    kubectl -n mono port-forward deployment/mono 3000:3000
+
+The API is then at http://localhost:3000.
+
 ## Local development
 
-Both scripts build the image locally, load it into the cluster, and install the
-same chart with that image.
+The kind and OpenShift scripts build the image locally, load it into the cluster,
+and install the same chart with that image.
 
 ### macOS (kind)
 
