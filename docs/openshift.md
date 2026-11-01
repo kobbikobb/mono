@@ -4,15 +4,15 @@ The [Developer Sandbox](https://developers.redhat.com/developer-sandbox) is a fr
 shared OpenShift cluster from Red Hat. It enforces the restricted security policy
 (arbitrary UID, no privileges), so it is a good check that the images and chart work on OpenShift.
 
+Total time: about 10 minutes, of which sign-up and sandbox start (step 1) take about 8
+and the install (steps 2-7) about 2. If you already have a sandbox, it is about 2 minutes.
+
 ## Prerequisites
 
 - A Red Hat account (free).
 - [`oc`](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/cli_tools/openshift-cli-oc) and [`helm`](https://helm.sh/docs/intro/install/) installed.
 
 The images and chart are public on ghcr.io, so no registry login or pull secret is needed.
-
-Total time: about 10 minutes, of which sign-up and sandbox start (step 1) take about 8
-and the install (steps 2-7) about 2. If you already have a sandbox, it is about 2 minutes.
 
 ## Steps
 
