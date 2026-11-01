@@ -29,7 +29,7 @@ fastify.post("/api/users", (req, resp) => {
   resp.code(201).send(user);
 });
 
-fastify.listen({ port: 3000, host: "0.0.0.0" }, (err, addr) => {
+fastify.listen({ port: 3000, host: "0.0.0.0" }, (err) => {
   if (err) {
     fastify.log.error(err);
     process.exit(1);
