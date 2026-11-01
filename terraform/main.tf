@@ -39,7 +39,47 @@ resource "kubernetes_deployment_v1" "api" {
         }
       }
     }
+  }
+}
 
+resource "kubernetes_service_v1" "api" {
+  metadata {
+    name = "api"
   }
 
+  spec {
+    selector = { app = "api" }
+
+    port {
+      port        = 3000
+      target_port = 3000
+    }
+  }
+}
+
+resource "kubernetes_ingress_v1" "api" {
+  metadata {
+    name = "api"
+  }
+
+  spec {
+    rule {
+      http {
+        path {
+          path      = "/api"
+          path_type = "Prefix"
+
+          backend {
+            service {
+              name = kubernetes_deployment_v1.api.metadata[0].name
+
+              port {
+                number = 3000
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
