@@ -1,8 +1,8 @@
 # mono
 
-A small Fastify API packaged as a Helm chart. The image and chart are published
-to GitHub Container Registry, so the same chart runs on Kubernetes (Ingress) or
-OpenShift (Route).
+A small monorepo with a Fastify API and a React web UI. The API is packaged as a
+Helm chart and published to GitHub Container Registry, so the same chart runs on
+Kubernetes (Ingress) or OpenShift (Route).
 
 ## Install
 
@@ -26,6 +26,15 @@ Enable exactly one of `ingress` or `route`. Key values:
 `image.repository`, `image.tag`, `replicaCount`, `service.port`,
 `ingress.enabled|className|host|path`, `route.enabled|host|tls.enabled`,
 `resources`, `serviceAccount.create`. See `charts/mono-api/values.yaml`.
+
+## Web UI
+
+Run the API and UI together with Docker Compose:
+
+    docker compose up --build
+
+The UI is at http://localhost:8080 and proxies `/api` to the API. The Helm chart
+deploys the API only.
 
 ## Local development
 
