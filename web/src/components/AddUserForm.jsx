@@ -1,14 +1,9 @@
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { addUser } from '../api/users.js';
+import { useAddUser } from '../api/users.js';
 
 export default function AddUserForm() {
   const [name, setName] = useState('');
-  const queryClient = useQueryClient();
-  const { mutate } = useMutation({
-    mutationFn: addUser,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
-  });
+  const { mutate } = useAddUser();
 
   const submit = (e) => {
     e.preventDefault();

@@ -1,8 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
-import { getUsers } from '../api/users.js';
+import { useUsers } from '../api/users.js';
 
 export default function UserList() {
-  const { data: users = [] } = useQuery({ queryKey: ['users'], queryFn: getUsers });
+  const { data: users = [] } = useUsers();
 
   return (
     <ul>
