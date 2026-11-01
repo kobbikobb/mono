@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { addUser } from './api.js';
+import { addUser } from '../api/users.js';
 
 export default function AddUserForm() {
   const [name, setName] = useState('');
