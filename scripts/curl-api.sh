@@ -1,19 +1,24 @@
 #!/usr/bin/env bash
-# Finds the host port cloud-provider-kind mapped to the ingress gateway and curls the API.
+# Reads the address cloud-provider-kind assigned to the api ingress and curls it.
 # Usage: ./scripts/curl-api.sh [path] [extra curl args...]   (default path: /api/users)
 set -euo pipefail
 
 path="${1:-/api/users}"
 shift || true
 
-port=$(docker ps --filter "name=kindccm-gw" --format '{{.Ports}}' \
-  | grep -o '0\.0\.0\.0:[0-9]*->80/tcp' | head -1 | sed -E 's/0\.0\.0\.0:([0-9]+)->.*/\1/')
+addr=""
+if command -v kubectl >/dev/null; then
+  addr=$(kubectl get ingress api -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
+  if [[ -z "$addr" ]]; then
+    addr=$(kubectl get ingress api -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+  fi
+fi
 
-if [[ -z "$port" ]]; then
-  echo "No gateway container found. Is 'sudo cloud-provider-kind' running?" >&2
+if [[ -z "$addr" ]]; then
+  echo "The api ingress has no address. Is 'cloud-provider-kind' running?" >&2
   exit 1
 fi
 
-echo "curl localhost:$port$path" >&2
-curl -sS -i -m 5 "$@" "localhost:$port$path"
+echo "curl http://$addr$path" >&2
+curl -sS -i -m 5 "$@" "http://$addr$path"
 echo
