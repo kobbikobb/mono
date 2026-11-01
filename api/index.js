@@ -18,11 +18,11 @@ const users = [
   },
 ];
 
-fastify.get("/users", (req, resp) => {
+fastify.get("/api/users", (req, resp) => {
   resp.send(users);
 });
 
-fastify.post("/users", (req, resp) => {
+fastify.post("/api/users", (req, resp) => {
   const { name } = req.body;
   const user = { id: next(), name };
   users.push(user);
