@@ -1,7 +1,17 @@
 # mono
 
-A small Fastify API and React web app deployed to a local [kind](https://kind.sigs.k8s.io/)
-cluster with Terraform (installing the Helm chart) and exposed through `cloud-provider-kind`.
+This repo demonstrates how to build and publish the artifacts of a small monorepo
+(a Fastify API and a React web app) so others can run it on Kubernetes and OpenShift:
+
+- **Container images** are built from `api/` and `web/` and published to ghcr.io by CI.
+  They run as a non-root user with no fixed UID, as OpenShift requires.
+- **A Helm chart** (`charts/mono`) deploys both. Its Ingress becomes a Route on OpenShift.
+- **Terraform** (`terraform/`) installs the chart the way a customer would.
+- **CI** tests everything end to end with Playwright, on Docker Compose and on kind
+  under restricted pod security.
+
+To try it on OpenShift, see [OPENSHIFT.md](OPENSHIFT.md). The rest of this file covers running it
+locally on [kind](https://kind.sigs.k8s.io/) with Terraform and `cloud-provider-kind`.
 
 Requires Docker, kubectl, terraform, and **kind v0.33+**. Its default node image
 is Kubernetes 1.37; `cloud-provider-kind` needs the `ServiceCIDR` API, which only
