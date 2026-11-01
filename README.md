@@ -50,7 +50,7 @@ controller container if needed.
 
 Runs the api and web containers; web is at http://localhost:8080.
 
-    ./scripts/run-docker.sh
+    ./scripts/deploy-docker.sh
 
 ## Without ingress
 
