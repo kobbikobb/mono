@@ -7,8 +7,8 @@ RUN npm ci --omit=dev
 
 COPY . .
 
-# running as a user, not root
-USER node
+# Numeric non-root user (the node user's uid) so Kubernetes can verify runAsNonRoot; names can't be checked
+USER 1000
 
 EXPOSE 3000
 
