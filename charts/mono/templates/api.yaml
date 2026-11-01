@@ -1,3 +1,6 @@
+{{- if gt (int .Values.api.replicas) 1 }}
+{{- fail "api.replicas must be 1: the API keeps users in memory" }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
