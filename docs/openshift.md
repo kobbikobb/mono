@@ -25,30 +25,32 @@ The images and chart are public on ghcr.io, so no registry login or pull secret 
 
         oc project
 
-4. Install the published chart:
+4. Choose a hostname under the sandbox's apps domain (derived from the cluster API URL):
 
-        helm install mono oci://ghcr.io/kobbikobb/charts/mono --set ingress.enabled=true
+        HOST="mono-$(oc project -q).$(oc whoami --show-server | sed -E 's#https://api\.(.*):6443#apps.\1#')"
+        echo "$HOST"
 
-   OpenShift converts the Ingress into a Route and generates a hostname.
+5. Install the published chart:
 
-5. Wait for the pods:
+        helm install mono oci://ghcr.io/kobbikobb/charts/mono \
+          --set ingress.enabled=true --set ingress.host="$HOST"
+
+   OpenShift converts the Ingress rule for that host into a Route.
+
+6. Wait for the pods:
 
         oc rollout status deployment/mono-api deployment/mono-web
 
-6. Open the app:
+7. Open the app at `http://$HOST` and check the API:
 
-        echo "http://$(oc get route -o jsonpath='{.items[0].spec.host}')"
-
-7. Check the API through the same URL:
-
-        curl "http://$(oc get route -o jsonpath='{.items[0].spec.host}')/api/users"
+        curl "http://$HOST/api/users"
 
 ## Troubleshooting
 
 - `ImagePullBackOff`: check the image name and that the sandbox can reach ghcr.io (`oc describe pod`).
 - Pod rejected by a security policy: check `oc get events`; the containers must run as non-root
   without fixed UIDs.
-- Route missing: `oc get ingress,route` and make sure `ingress.enabled=true`.
+- Route missing: `oc get ingress,route`; the Ingress needs a host (`ingress.host`) to become a Route.
 
 ## Clean up
 
