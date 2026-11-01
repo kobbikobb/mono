@@ -19,7 +19,8 @@ OpenShift, with a Route:
       -n mono --create-namespace \
       --set route.enabled=true
 
-Pin a release with `--version X.Y.Z`. Without `route.host`, OpenShift generates
+From a checkout, use `./charts/mono-api` instead of the OCI reference. Pin a
+release with `--version X.Y.Z`. Without `route.host`, OpenShift generates
 one: `oc -n mono get route mono`.
 
 Enable exactly one of `ingress` or `route`. Key values:
