@@ -1,4 +1,4 @@
-name: Publish images
+name: Publish images and chart
 
 on:
   push:
@@ -34,3 +34,15 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}/${{ matrix.image }}:${{ github.sha }}
             ghcr.io/${{ github.repository }}/${{ matrix.image }}:latest
+
+  chart:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u "${{ github.actor }}" --password-stdin
+      # The run number gives every merge a unique, increasing chart version.
+      - run: helm package charts/mono --version "0.1.${{ github.run_number }}" --app-version "${{ github.sha }}"
+      - run: helm push mono-*.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
