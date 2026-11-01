@@ -46,6 +46,20 @@ Run the ingress controller as a container (no `sudo`):
 restarts the API and waits for the ingress address. On Linux it also starts the
 controller container if needed.
 
+## OpenShift (MicroShift)
+
+Runs the same API on a local OpenShift (MicroShift 4.19) without root or a Red Hat
+pull secret, using [MINC](https://github.com/minc-org/minc). Requires `oc` and
+`minc` on `PATH`.
+
+    ./scripts/deploy-openshift.sh
+
+The script creates or reuses a `microshift` container (Docker or Podman), loads
+the image, applies `openshift/manifests.yaml`, and prints the Route, e.g.
+`http://api-mono.apps.127.0.0.1.nip.io:9080/api/users`.
+
+Stop it with `minc delete`.
+
 ## Without ingress
 
     kubectl port-forward deployment/api 3000:3000
