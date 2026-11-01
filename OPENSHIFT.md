@@ -37,11 +37,11 @@ shared OpenShift cluster from Red Hat. It enforces the restricted security polic
 
 6. Open the app:
 
-        echo "https://$(oc get route -o jsonpath='{.items[0].spec.host}')"
+        echo "http://$(oc get route -o jsonpath='{.items[0].spec.host}')"
 
 7. Check the API through the same URL:
 
-        curl "https://$(oc get route -o jsonpath='{.items[0].spec.host}')/api/users"
+        curl "http://$(oc get route -o jsonpath='{.items[0].spec.host}')/api/users"
 
 ## Troubleshooting
 
