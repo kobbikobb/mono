@@ -50,9 +50,3 @@ controller container if needed.
 
     kubectl port-forward deployment/api 3000:3000
     curl localhost:3000/api/users
-
-## Web
-
-A minimal React app (Vite) in `web/`:
-
-    cd web && npm install && npm run dev
