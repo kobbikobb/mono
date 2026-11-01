@@ -3,12 +3,6 @@ kind: Namespace
 metadata:
   name: mono
 ---
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: api
-  namespace: mono
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -24,7 +18,6 @@ spec:
       labels:
         app: api
     spec:
-      serviceAccountName: api
       containers:
         - name: api
           image: localhost/users-api:dev

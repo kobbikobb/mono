@@ -1,75 +1,65 @@
 #!/usr/bin/env bash
 # Deploys the API to a local MicroShift cluster managed by MINC
-# (https://github.com/minc-org/minc). No root or Red Hat pull secret required.
+# (https://github.com/minc-org/minc). Requires a rootful Docker daemon.
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
+runtime="docker"
 image="users-api:dev"
 local_image="localhost/$image"
 namespace="mono"
 context="microshift"
 
-command -v minc >/dev/null || { echo "minc is not installed, see the README" >&2; exit 1; }
-command -v oc >/dev/null || { echo "oc is not installed" >&2; exit 1; }
-
-runtime="${MINC_PROVIDER:-}"
-if [[ -z "$runtime" ]]; then
-  if command -v docker >/dev/null; then
-    runtime=docker
-  elif command -v podman >/dev/null; then
-    runtime=podman
-  else
-    echo "Neither docker nor podman is available" >&2
-    exit 1
-  fi
-fi
-
-if ! "$runtime" inspect -f '{{.State.Running}}' microshift 2>/dev/null | grep -qx true; then
-  # The overlay cache is mounted read-only and breaks CRI-O on some setups.
-  minc --provider "$runtime" create --disable-overlay-cache
-fi
-
-echo "Waiting for the cluster..."
-for _ in $(seq 1 60); do
-  if oc --context "$context" get nodes 2>/dev/null | grep -q ' Ready '; then
-    break
-  fi
-  sleep 2
+for cmd in docker minc oc; do
+  command -v "$cmd" >/dev/null || { echo "$cmd is not installed, see the README" >&2; exit 1; }
 done
+
+# Creates the cluster or restarts an existing one; either way MINC refreshes
+# the kubeconfig. The overlay cache is mounted read-only and breaks CRI-O.
+minc --provider "$runtime" create --disable-overlay-cache
+oc --context "$context" wait --for=condition=Ready node --all --timeout=180s
 
 "$runtime" build -t "$image" "$root/api"
 
 # The image only exists in the host's container storage, so copy it into
 # MicroShift's CRI-O storage.
 archive="$(mktemp)"
-trap 'rm -f "$archive"' EXIT
+remote="/tmp/users-api.$$.tar"
+cleanup() {
+  "$runtime" exec microshift rm -f "$remote" >/dev/null 2>&1 || true
+  rm -f "$archive"
+}
+trap cleanup EXIT
 "$runtime" save "$image" -o "$archive"
-"$runtime" cp "$archive" microshift:/tmp/users-api.tar
+"$runtime" cp "$archive" microshift:"$remote"
 "$runtime" exec microshift \
-  skopeo copy docker-archive:/tmp/users-api.tar "containers-storage:$local_image"
-"$runtime" exec microshift rm -f /tmp/users-api.tar
+  skopeo copy "docker-archive:$remote" "containers-storage:$local_image"
 
 oc --context "$context" apply -f "$root/openshift/manifests.yaml"
-oc --context "$context" adm policy add-scc-to-user anyuid -z api -n "$namespace"
 # The tag is always :dev, so restart to pick up a rebuilt image.
 oc --context "$context" -n "$namespace" rollout restart deployment/api
 oc --context "$context" -n "$namespace" rollout status deployment/api --timeout=180s
 
-for _ in $(seq 1 30); do
-  if oc --context "$context" -n "$namespace" get route api \
-    -o jsonpath='{.status.ingress[0].host}' 2>/dev/null | grep -q .; then
+host=""
+for _ in $(seq 1 60); do
+  host=$(oc --context "$context" -n "$namespace" get route api \
+    -o jsonpath='{.status.ingress[0].host}' 2>/dev/null || true)
+  admitted=$(oc --context "$context" -n "$namespace" get route api \
+    -o jsonpath='{.status.ingress[0].conditions[?(@.type=="Admitted")].status}' 2>/dev/null || true)
+  if [[ -n "$host" && "$admitted" == "True" ]]; then
     break
   fi
+  host=""
   sleep 2
 done
 
-host=$(oc --context "$context" -n "$namespace" get route api -o jsonpath='{.spec.host}')
-mapping=$("$runtime" port microshift 80/tcp 2>/dev/null | head -1 || true)
-port="${mapping##*:}"
-
-if [[ -n "$port" ]]; then
-  host="$host:$port"
+if [[ -z "$host" ]]; then
+  oc --context "$context" -n "$namespace" describe route api >&2 || true
+  echo "The api Route was not admitted" >&2
+  exit 1
 fi
 
+mapping=$("$runtime" port microshift 80/tcp 2>/dev/null | head -1 || true)
+port="${mapping##*:}"
 echo
-echo "Route: http://$host/api/users"
+echo "Route: http://$host:${port:-9080}/api/users"

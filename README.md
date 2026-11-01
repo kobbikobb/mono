@@ -48,17 +48,17 @@ controller container if needed.
 
 ## OpenShift (MicroShift)
 
-Runs the same API on a local OpenShift (MicroShift 4.19) without root or a Red Hat
-pull secret, using [MINC](https://github.com/minc-org/minc). Requires `oc` and
-`minc` on `PATH`.
+Runs the same API on a local MicroShift cluster via
+[MINC](https://github.com/minc-org/minc). Requires a rootful Docker daemon plus
+`oc` and `minc` on `PATH`; no Red Hat pull secret is needed.
 
     ./scripts/deploy-openshift.sh
 
-The script creates or reuses a `microshift` container (Docker or Podman), loads
-the image, applies `openshift/manifests.yaml`, and prints the Route, e.g.
+The script creates or reuses a `microshift` container, loads the image into its
+CRI-O, applies `openshift/manifests.yaml`, and prints the Route, e.g.
 `http://api-mono.apps.127.0.0.1.nip.io:9080/api/users`.
 
-Stop it with `minc delete`.
+Stop it with `minc --provider docker delete`.
 
 ## Without ingress
 
