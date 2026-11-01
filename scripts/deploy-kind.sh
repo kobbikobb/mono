@@ -6,8 +6,8 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 # shellcheck source=scripts/lib.sh
 source "$root/scripts/lib.sh"
-api_image="mono-api:dev"
-web_image="mono-web:dev"
+api_image="ghcr.io/kobbikobb/mono/api:dev"
+web_image="ghcr.io/kobbikobb/mono/web:dev"
 context="kind-kind"
 
 command -v kind >/dev/null || { echo "kind is not installed" >&2; exit 1; }
@@ -49,7 +49,7 @@ docker build -t "$web_image" "$root/web"
 kubectl config use-context "$context"
 kind load docker-image "$api_image" "$web_image" --name kind
 
-tf_vars=(-var "api_image=$api_image" -var "web_image=$web_image")
+tf_vars=(-var "image_tag=dev")
 terraform -chdir="$root/terraform" init -input=false
 set +e
 terraform -chdir="$root/terraform" plan -input=false -detailed-exitcode "${tf_vars[@]}"
