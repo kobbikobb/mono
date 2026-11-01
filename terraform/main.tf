@@ -1,85 +1,34 @@
 terraform {
   required_providers {
-    kubernetes = {
-      source  = "hashicorp/kubernetes",
+    helm = {
+      source  = "hashicorp/helm"
       version = "~> 3.0"
     }
   }
 }
 
-provider "kubernetes" {
-  config_path = pathexpand("~/.kube/config")
-}
-
-resource "kubernetes_deployment_v1" "api" {
-  metadata {
-    name = "api"
-  }
-
-  spec {
-    replicas = 1
-
-    selector {
-      match_labels = { app = "api" }
-    }
-
-    template {
-      metadata {
-        labels = { app = "api" }
-      }
-      spec {
-        container {
-          name              = "api"
-          image             = "users-api:dev"
-          image_pull_policy = "IfNotPresent"
-
-          port {
-            container_port = 3000
-          }
-        }
-      }
-    }
+provider "helm" {
+  kubernetes = {
+    config_path = pathexpand("~/.kube/config")
   }
 }
 
-resource "kubernetes_service_v1" "api" {
-  metadata {
-    name = "api"
-  }
-
-  spec {
-    selector = { app = "api" }
-
-    port {
-      port        = 3000
-      target_port = 3000
-    }
-  }
+# A customer would point this at the published chart, e.g. oci://ghcr.io/kobbikobb/charts/mono
+variable "chart" {
+  default = "../charts/mono"
 }
 
-resource "kubernetes_ingress_v1" "api" {
-  metadata {
-    name = "api"
-  }
+variable "image_tag" {
+  default = "latest"
+}
 
-  spec {
-    rule {
-      http {
-        path {
-          path      = "/api"
-          path_type = "Prefix"
+resource "helm_release" "mono" {
+  name  = "mono"
+  chart = var.chart
 
-          backend {
-            service {
-              name = kubernetes_deployment_v1.api.metadata[0].name
-
-              port {
-                number = 3000
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+  set = [
+    { name = "ingress.enabled", value = "true" },
+    { name = "api.image.tag", value = var.image_tag },
+    { name = "web.image.tag", value = var.image_tag },
+  ]
 }
