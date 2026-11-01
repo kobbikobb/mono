@@ -1,47 +1,52 @@
 # mono
 
-## Prerequisites
+A small Fastify API deployed to a local [kind](https://kind.sigs.k8s.io/) cluster
+with Terraform and exposed through `cloud-provider-kind`.
 
-You need Docker, kind, kubectl, terraform and cloud-provider-kind, plus a kind cluster:
+Requires Docker, kubectl, terraform, and **kind v0.33+**. Its default node image
+is Kubernetes 1.37; `cloud-provider-kind` needs the `ServiceCIDR` API, which only
+exists in Kubernetes 1.34 and newer. Older kind releases will fail with
+`failed to get service CIDRs`.
 
-    kind create cluster
-
-### macOS
+## macOS
 
     brew install colima docker kind kubectl terraform cloud-provider-kind
     colima start
+    kind create cluster --name kind
 
-### Linux
+Start the ingress controller in its own terminal:
 
-Install Docker Engine and make sure your user can run `docker`. Then install kubectl and terraform from your package manager or their official install pages, and the two kind tools with Go:
+    sudo cloud-provider-kind
 
-    go install sigs.k8s.io/kind@latest
-    go install sigs.k8s.io/cloud-provider-kind@latest
+With colima, `sudo` drops `DOCKER_HOST`, so pass the socket explicitly:
 
-`cloud-provider-kind` runs under `sudo`, so it must be on root's path too:
+    sudo -E DOCKER_HOST="unix://$HOME/.colima/default/docker.sock" cloud-provider-kind
 
-    sudo install "$(go env GOPATH)/bin/cloud-provider-kind" /usr/local/bin/
+## Linux
 
-## Deploy locally
+Install Docker Engine, kubectl and terraform, then kind:
+
+    curl -sSL -o /tmp/kind https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64
+    sudo install -m 0755 /tmp/kind /usr/local/bin/kind
+    kind create cluster --name kind
+
+Run the ingress controller as a container (no `sudo`):
+
+    docker run -d --name cloud-provider-kind --rm \
+      --network host \
+      -v /var/run/docker.sock:/var/run/docker.sock \
+      registry.k8s.io/cloud-provider-kind/cloud-controller-manager:v0.12.0
+
+## Deploy
 
     ./scripts/deploy-local.sh
     ./scripts/curl-api.sh [path]
 
-## cluster
+`deploy-local.sh` builds the image, loads it into kind, applies Terraform,
+restarts the API and waits for the ingress address. On Linux it also starts the
+controller container if needed.
 
-kind create cluster
-kubectl config use-context kind-kind
-kubectl config get-contexts
+## Without ingress
 
-kind load docker-image users-api:dev
-
-terraform plan / apply
-
-### Ingress
-brew install cloud-provider-kind
-
-#### Run an ingress controller
-sudo "$(command -v cloud-provider-kind)"
-
-### Without ingress
-kubectl port-forward deployment/api 3000:3000
+    kubectl port-forward deployment/api 3000:3000
+    curl localhost:3000/api/users
