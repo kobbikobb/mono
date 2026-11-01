@@ -39,12 +39,18 @@ Run the ingress controller as a container (no `sudo`):
 
 ## Deploy
 
-    ./scripts/deploy-local.sh
+    ./scripts/deploy-kind.sh
     ./scripts/curl-api.sh [path]
 
-`deploy-local.sh` builds the image, loads it into kind, applies Terraform,
+`deploy-kind.sh` builds the image, loads it into kind, applies Terraform,
 restarts the API and waits for the ingress address. On Linux it also starts the
 controller container if needed.
+
+## Docker Compose
+
+Runs the api and web containers; web is at http://localhost:8080.
+
+    ./scripts/deploy-docker.sh
 
 ## Without ingress
 
