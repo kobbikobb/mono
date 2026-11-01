@@ -11,6 +11,8 @@ shared OpenShift cluster from Red Hat. It enforces the restricted security polic
 
 The images and chart are public on ghcr.io, so no registry login or pull secret is needed.
 
+Time: about 10 minutes (the sign-up and sandbox start take most of it; the install itself is under 2).
+
 ## Steps
 
 1. Sign up at https://developers.redhat.com/developer-sandbox and start the OpenShift sandbox.
