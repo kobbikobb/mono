@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
 
+# Runs one at a time so `latest` follows main. Accepted: if pushes queue up,
+# only the newest pending run is kept, so an intermediate commit may get no image.
 concurrency: publish
 
 jobs:
