@@ -8,9 +8,8 @@ shared OpenShift cluster from Red Hat. It enforces the restricted security polic
 
 - A Red Hat account (free).
 - [`oc`](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/cli_tools/openshift-cli-oc) and [`helm`](https://helm.sh/docs/intro/install/) installed.
-- The images `ghcr.io/kobbikobb/mono/api` and `ghcr.io/kobbikobb/mono/web`, and the chart
-  `ghcr.io/kobbikobb/charts/mono`, must be **public**
-  (GitHub package settings → Change visibility). Packages are private by default.
+
+The images and chart are public on ghcr.io, so no registry login or pull secret is needed.
 
 ## Steps
 
@@ -46,7 +45,7 @@ shared OpenShift cluster from Red Hat. It enforces the restricted security polic
 
 ## Troubleshooting
 
-- `ImagePullBackOff`: a ghcr.io package is still private.
+- `ImagePullBackOff`: check the image name and that the sandbox can reach ghcr.io (`oc describe pod`).
 - Pod rejected by a security policy: check `oc get events`; the containers must run as non-root
   without fixed UIDs.
 - Route missing: `oc get ingress,route` and make sure `ingress.enabled=true`.
