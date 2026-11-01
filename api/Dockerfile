@@ -8,7 +8,7 @@ RUN npm ci --omit=dev
 COPY . .
 
 # running as a user, not root
-USER node
+USER 1000:1000
 
 EXPOSE 3000
 

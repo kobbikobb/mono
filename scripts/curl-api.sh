@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Curls the api ingress using a host-reachable address.
+# Curls the API through the kind Ingress or the OpenShift Route.
 # Usage: ./scripts/curl-api.sh [path] [extra curl args...]   (default path: /api/users)
 set -euo pipefail
 
@@ -13,7 +13,7 @@ shift || true
 target="$(api_target)"
 
 if [[ -z "$target" ]]; then
-  echo "The api ingress has no address. Is 'cloud-provider-kind' running?" >&2
+  echo "The API has no reachable address. Is the Ingress or Route ready?" >&2
   exit 1
 fi
 

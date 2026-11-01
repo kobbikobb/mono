@@ -1,0 +1,65 @@
+replicaCount: 1
+fullnameOverride: ""
+
+image:
+  repository: ghcr.io/kobbikobb/mono-api
+  tag: ""
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podAnnotations: {}
+podLabels: {}
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  enabled: false
+  className: ""
+  host: ""
+  path: /api
+  pathType: Prefix
+  annotations: {}
+
+route:
+  enabled: false
+  host: ""
+  path: /
+  annotations: {}
+  tls:
+    enabled: false
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+
+resources: {}
+
+readinessProbe:
+  httpGet:
+    path: /api/users
+    port: http
+  initialDelaySeconds: 3
+  periodSeconds: 10
+
+livenessProbe:
+  httpGet:
+    path: /api/users
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 20
+
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+podSecurityContext: {}

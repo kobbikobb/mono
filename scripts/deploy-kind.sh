@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
-# Builds the API image, loads it into kind, applies terraform and makes sure the
-# cloud-provider-kind ingress controller is running.
+# Builds the API image, loads it into kind, and installs the Helm chart.
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 # shellcheck source=scripts/lib.sh
 source "$root/scripts/lib.sh"
 image="users-api:dev"
+release="mono"
+namespace="mono"
 context="kind-kind"
+chart="$root/charts/mono-api"
 
-command -v kind >/dev/null || { echo "kind is not installed" >&2; exit 1; }
+for cmd in docker kind kubectl helm; do
+  command -v "$cmd" >/dev/null || { echo "$cmd is not installed, see the README" >&2; exit 1; }
+done
+
 kind get clusters | grep -qx kind || { echo "No kind cluster named 'kind'. Run: kind create cluster --name kind" >&2; exit 1; }
 
 ensure_ingress_controller() {
@@ -47,21 +52,15 @@ docker build -t "$image" "$root/api"
 kubectl config use-context "$context"
 kind load docker-image "$image" --name kind
 
-terraform -chdir="$root/terraform" init -input=false
-set +e
-terraform -chdir="$root/terraform" plan -input=false -detailed-exitcode
-plan_status=$?
-set -e
+helm upgrade --install "$release" "$chart" \
+  --namespace "$namespace" --create-namespace \
+  --set image.repository=users-api \
+  --set image.tag=dev \
+  --set ingress.enabled=true
 
-case "$plan_status" in
-  0) echo "No terraform changes." ;;
-  2) terraform -chdir="$root/terraform" apply -input=false -auto-approve ;;
-  *) exit "$plan_status" ;;
-esac
-
-# The tag is always :dev, so a rebuilt image only reaches the pod after a restart.
-kubectl rollout restart deployment/api
-kubectl rollout status deployment/api
+# The tag is always :dev, so restart to pick up a rebuilt image.
+kubectl -n "$namespace" rollout restart "deployment/$release"
+kubectl -n "$namespace" rollout status "deployment/$release" --timeout=180s
 
 echo "Waiting for the ingress address..."
 target=""
@@ -75,4 +74,5 @@ if [[ -n "$target" ]]; then
   echo "API: http://$target/api/users"
 else
   echo "The api ingress has no reachable address. Is 'cloud-provider-kind' running?" >&2
+  exit 1
 fi

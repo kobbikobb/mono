@@ -1,0 +1,22 @@
+{{- $fullname := include "mono-api.fullname" . -}}
+{{- if and .Values.ingress.enabled .Values.route.enabled }}
+WARNING: both ingress and route are enabled; disable one of them.
+{{- end }}
+{{- if .Values.route.enabled }}
+{{- if .Values.route.host }}
+Open: http{{ if .Values.route.tls.enabled }}s{{ end }}://{{ .Values.route.host }}{{ .Values.route.path }}
+{{- else }}
+Get the generated Route host with:
+  oc -n {{ .Release.Namespace }} get route {{ $fullname }} -o jsonpath='{.spec.host}'
+{{- end }}
+{{- else if .Values.ingress.enabled }}
+{{- if .Values.ingress.host }}
+Open: http://{{ .Values.ingress.host }}{{ .Values.ingress.path }}
+{{- else }}
+Get the Ingress address with:
+  kubectl -n {{ .Release.Namespace }} get ingress {{ $fullname }}
+{{- end }}
+{{- else }}
+The API is only reachable inside the cluster:
+  http://{{ $fullname }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}/api/users
+{{- end }}

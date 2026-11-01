@@ -1,66 +1,76 @@
 # mono
 
-A small Fastify API deployed to a local [kind](https://kind.sigs.k8s.io/) cluster
-with Terraform and exposed through `cloud-provider-kind`.
+A small Fastify API packaged as a Helm chart. The image and chart are published
+to GitHub Container Registry, so the same chart runs on Kubernetes (Ingress) or
+OpenShift (Route).
 
-Requires Docker, kubectl, terraform, and **kind v0.33+**. Its default node image
-is Kubernetes 1.37; `cloud-provider-kind` needs the `ServiceCIDR` API, which only
-exists in Kubernetes 1.34 and newer. Older kind releases will fail with
-`failed to get service CIDRs`.
+## Install
 
-## macOS
+Kubernetes, behind an Ingress (an ingress controller must already exist):
 
-    brew install colima docker kind kubectl terraform cloud-provider-kind
+    helm install mono oci://ghcr.io/kobbikobb/charts/mono-api \
+      -n mono --create-namespace \
+      --set ingress.enabled=true \
+      --set ingress.host=mono.example.com
+
+OpenShift, with a Route:
+
+    helm install mono oci://ghcr.io/kobbikobb/charts/mono-api \
+      -n mono --create-namespace \
+      --set route.enabled=true
+
+Pin a release with `--version X.Y.Z`. Without `route.host`, OpenShift generates
+one: `oc -n mono get route mono`.
+
+Enable exactly one of `ingress` or `route`. Key values:
+`image.repository`, `image.tag`, `replicaCount`, `service.port`,
+`ingress.enabled|className|host|path`, `route.enabled|host|tls.enabled`,
+`resources`, `serviceAccount.create`. See `charts/mono-api/values.yaml`.
+
+## Local development
+
+Both scripts build the image locally, load it into the cluster, and install the
+same chart with that image.
+
+### macOS (kind)
+
+    brew install colima docker kind kubectl helm cloud-provider-kind
     colima start
     kind create cluster --name kind
 
-Start the ingress controller in its own terminal:
-
-    sudo cloud-provider-kind
-
-With colima, `sudo` drops `DOCKER_HOST`, so pass the socket explicitly:
+Start the ingress controller in another terminal:
 
     sudo -E DOCKER_HOST="unix://$HOME/.colima/default/docker.sock" cloud-provider-kind
 
-## Linux
+Then:
 
-Install Docker Engine, kubectl and terraform, then kind:
+    ./scripts/deploy-kind.sh
 
-    curl -sSL -o /tmp/kind https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64
-    sudo install -m 0755 /tmp/kind /usr/local/bin/kind
+### Linux (kind)
+
+Install [kind](https://kind.sigs.k8s.io/) v0.33+ (Kubernetes 1.34+ for
+`cloud-provider-kind`), kubectl, and Helm. Then:
+
     kind create cluster --name kind
+    ./scripts/deploy-kind.sh
 
-Run the ingress controller as a container (no `sudo`):
+The script starts `cloud-provider-kind` in Docker.
 
-    docker run -d --name cloud-provider-kind --rm \
-      --network host \
-      -v /var/run/docker.sock:/var/run/docker.sock \
-      registry.k8s.io/cloud-provider-kind/cloud-controller-manager:v0.12.0
+### OpenShift (MicroShift)
 
-## Deploy
-
-    ./scripts/deploy-local.sh
-    ./scripts/curl-api.sh [path]
-
-`deploy-local.sh` builds the image, loads it into kind, applies Terraform,
-restarts the API and waits for the ingress address. On Linux it also starts the
-controller container if needed.
-
-## OpenShift (MicroShift)
-
-Runs the same API on a local MicroShift cluster via
-[MINC](https://github.com/minc-org/minc). Requires a rootful Docker daemon plus
-`oc` and `minc` on `PATH`; no Red Hat pull secret is needed.
+Requires Docker, `oc`, and [MINC](https://github.com/minc-org/minc):
 
     ./scripts/deploy-openshift.sh
 
-The script creates or reuses a `microshift` container, loads the image into its
-CRI-O, applies `openshift/manifests.yaml`, and prints the Route, e.g.
-`http://api-mono.apps.127.0.0.1.nip.io:9080/api/users`.
+No Red Hat pull secret is needed. Stop the cluster with
+`minc --provider docker delete`.
 
-Stop it with `minc --provider docker delete`.
+### Verify
 
-## Without ingress
+    ./scripts/curl-api.sh
 
-    kubectl port-forward deployment/api 3000:3000
-    curl localhost:3000/api/users
+## Releases
+
+Pushing a `vX.Y.Z` tag publishes the multi-arch image and OCI chart to GHCR.
+Pushes to `main` publish `edge`. Make both GHCR packages public after the first
+publish.

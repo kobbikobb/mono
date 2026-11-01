@@ -6,17 +6,20 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 runtime="docker"
 image="users-api:dev"
-local_image="localhost/$image"
+local_image="localhost/users-api"
+release="mono"
 namespace="mono"
 context="microshift"
+chart="$root/charts/mono-api"
 
-for cmd in docker minc oc; do
+for cmd in docker minc oc helm; do
   command -v "$cmd" >/dev/null || { echo "$cmd is not installed, see the README" >&2; exit 1; }
 done
 
 # Creates the cluster or restarts an existing one; either way MINC refreshes
 # the kubeconfig. The overlay cache is mounted read-only and breaks CRI-O.
 minc --provider "$runtime" create --disable-overlay-cache
+kubectl config use-context "$context"
 oc --context "$context" wait --for=condition=Ready node --all --timeout=180s
 
 "$runtime" build -t "$image" "$root/api"
@@ -33,18 +36,23 @@ trap cleanup EXIT
 "$runtime" save "$image" -o "$archive"
 "$runtime" cp "$archive" microshift:"$remote"
 "$runtime" exec microshift \
-  skopeo copy "docker-archive:$remote" "containers-storage:$local_image"
+  skopeo copy "docker-archive:$remote" "containers-storage:$local_image:dev"
 
-oc --context "$context" apply -f "$root/openshift/manifests.yaml"
+helm upgrade --install "$release" "$chart" \
+  --kube-context "$context" \
+  --namespace "$namespace" --create-namespace \
+  --set image.repository="$local_image" \
+  --set image.tag=dev \
+  --set route.enabled=true
 # The tag is always :dev, so restart to pick up a rebuilt image.
-oc --context "$context" -n "$namespace" rollout restart deployment/api
-oc --context "$context" -n "$namespace" rollout status deployment/api --timeout=180s
+oc --context "$context" -n "$namespace" rollout restart "deployment/$release"
+oc --context "$context" -n "$namespace" rollout status "deployment/$release" --timeout=180s
 
 host=""
 for _ in $(seq 1 60); do
-  host=$(oc --context "$context" -n "$namespace" get route api \
+  host=$(oc --context "$context" -n "$namespace" get route "$release" \
     -o jsonpath='{.status.ingress[0].host}' 2>/dev/null || true)
-  admitted=$(oc --context "$context" -n "$namespace" get route api \
+  admitted=$(oc --context "$context" -n "$namespace" get route "$release" \
     -o jsonpath='{.status.ingress[0].conditions[?(@.type=="Admitted")].status}' 2>/dev/null || true)
   if [[ -n "$host" && "$admitted" == "True" ]]; then
     break
@@ -54,7 +62,7 @@ for _ in $(seq 1 60); do
 done
 
 if [[ -z "$host" ]]; then
-  oc --context "$context" -n "$namespace" describe route api >&2 || true
+  oc --context "$context" -n "$namespace" describe route "$release" >&2 || true
   echo "The api Route was not admitted" >&2
   exit 1
 fi
