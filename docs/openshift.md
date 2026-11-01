@@ -11,7 +11,8 @@ shared OpenShift cluster from Red Hat. It enforces the restricted security polic
 
 The images and chart are public on ghcr.io, so no registry login or pull secret is needed.
 
-Time: about 10 minutes (the sign-up and sandbox start take most of it; the install itself is under 2).
+Total time: about 10 minutes, of which sign-up and sandbox start (step 1) take about 8
+and the install (steps 2-7) about 2. If you already have a sandbox, it is about 2 minutes.
 
 ## Steps
 
