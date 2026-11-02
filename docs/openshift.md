@@ -1,63 +1,53 @@
 # Run on the OpenShift Developer Sandbox
 
-The [Developer Sandbox](https://developers.redhat.com/developer-sandbox) is a free,
-shared OpenShift cluster from Red Hat. It enforces the restricted security policy
-(arbitrary UID, no privileges), so it is a good check that the images and chart work on OpenShift.
+Deploys this app to the free [Developer Sandbox](https://developers.redhat.com/developer-sandbox),
+a shared OpenShift cluster from Red Hat. About 15-20 minutes the first time (one timed run: 17).
 
-Total time: about 15-20 minutes the first time, including installing `oc` and starting the
-sandbox (one timed run took 17 minutes).
-
-## Prerequisites
-
-- A Red Hat account (free).
-- [`helm`](https://helm.sh/docs/intro/install/) and the OpenShift CLI `oc`
-  (macOS: `brew install openshift-cli`).
-
-The images and chart are public on ghcr.io, so no registry login or pull secret is needed.
+You need a Red Hat account (free), [`helm`](https://helm.sh/docs/intro/install/) and the
+OpenShift CLI `oc` (macOS: `brew install openshift-cli`).
 
 ## Steps
 
-1. Start the sandbox at https://developers.redhat.com/developer-sandbox
+1. **Start the sandbox** at https://developers.redhat.com/developer-sandbox
    (**Start your sandbox for free**). It is deleted after 30 days.
 
-2. Open its OpenShift console: on the same page, click **Launch** under
-   **Build and deploy your apps to Kubernetes**. Do not use **Create cluster** in the
-   Red Hat Hybrid Cloud Console; those are paid clusters. The sandbox console is at
-   `console-openshift-console.apps.<cluster>`.
+2. **Open its console**: on the same page, click **Launch** under
+   **Build and deploy your apps to Kubernetes**. Do not click **Create cluster** anywhere;
+   those clusters are paid.
 
-3. In that console, click your username (top right) → **Copy login command** →
-   **Display Token**, and run the `oc login` command it shows:
-
-        oc login --token=sha256~... --server=https://api.<cluster>:6443
-
-   This switches your kubectl context to the sandbox, so switch back afterwards
-   (`kubectl config use-context <name>`). Check you are in your project (`<username>-dev`):
+3. **Log in from your terminal**: in the console, click your username (top right) →
+   **Copy login command** → **Display Token**, and run the `oc login ...` command it shows.
+   This switches your kubectl context to the sandbox, so switch back when you are done.
+   Check it worked:
 
         oc project
 
-4. Choose a hostname under the sandbox's apps domain. Without a host in the Ingress,
-   OpenShift creates no Route:
+4. **Pick a web address for the app**:
 
         HOST="mono-$(oc project -q).$(oc whoami --show-server | sed -E 's#https://api\.(.*):6443#apps.\1#')"
         echo "$HOST"
 
-5. Install the published chart and wait for the pods:
+   *Why?* OpenShift only publishes an app on the internet if you give it an address.
+   Without one, the install succeeds but nothing is reachable. The address must end with the
+   sandbox's domain (`apps.<cluster>...`), which the command above works out for you.
+
+5. **Install the app** (the images and chart are public, no login needed):
 
         helm install mono oci://ghcr.io/kobbikobb/charts/mono --wait \
           --set ingress.enabled=true --set ingress.host="$HOST" --set ingress.tls=true
 
    OpenShift converts the Ingress into a Route that serves HTTPS.
 
-6. Open `https://$HOST` and check the API:
+6. **Open it**: go to `https://$HOST`, or check the API:
 
         curl "https://$HOST/api/users"
 
-## Troubleshooting
+## Problems
 
-- `ImagePullBackOff`: `oc describe pod`; check the sandbox can reach ghcr.io.
-- Pod rejected by a security policy: `oc get events`; the containers must run as non-root
-  without fixed UIDs.
-- No Route (`oc get route` is empty): the Ingress has no host. Reinstall with `ingress.host`.
+- `oc get route` is empty: you installed without `ingress.host`. Run step 5 again as
+  `helm upgrade` with the host.
+- `ImagePullBackOff`: `oc describe pod`, and check the sandbox can reach ghcr.io.
+- A pod is rejected: `oc get events`.
 
 ## Clean up
 
