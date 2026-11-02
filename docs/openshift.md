@@ -19,10 +19,11 @@ The images and chart are public on ghcr.io, so no registry login or pull secret 
 1. Sign up at https://developers.redhat.com/developer-sandbox and start the OpenShift sandbox.
    The sandbox sleeps after inactivity and is deleted after 30 days.
 
-2. Open the sandbox's OpenShift web console. From the Red Hat Hybrid Cloud Console
-   (console.redhat.com), choose **Red Hat OpenShift** → **Developer Sandbox** → **Launch**.
-   This opens a different site, `console-openshift-console.apps.<cluster>`, with the
-   OpenShift console (not the Red Hat account page with your name and Org ID).
+2. Open the sandbox's OpenShift web console. On the
+   [Developer Sandbox page](https://developers.redhat.com/developer-sandbox), click **Launch**
+   under **Build and deploy your apps to Kubernetes**. The Red Hat Hybrid Cloud Console
+   (console.redhat.com, with your name and Org ID) is a different site and has no sandbox login
+   command. The sandbox console is at `console-openshift-console.apps.<cluster>`.
 
 3. In the OpenShift console, click your username (top right) → **Copy login command** →
    **Display Token**, and run the `oc login --token=... --server=...` command it shows:
