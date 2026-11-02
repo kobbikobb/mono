@@ -1,5 +1,5 @@
-{{- if gt (int .Values.api.replicas) 1 }}
-{{- fail "api.replicas must be 1: the API keeps users in memory" }}
+{{- if and (gt (int .Values.api.replicas) 1) (not .Values.postgres.enabled) }}
+{{- fail "api.replicas must be 1 unless postgres.enabled: the API keeps users in memory" }}
 {{- end }}
 apiVersion: apps/v1
 kind: Deployment
@@ -18,6 +18,16 @@ spec:
       containers:
         - name: api
           image: {{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}
+          {{- if .Values.postgres.enabled }}
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgres
+                  key: password
+            - name: DATABASE_URL
+              value: postgres://mono:$(PGPASSWORD)@{{ .Release.Name }}-postgres:5432/mono
+          {{- end }}
           ports:
             - containerPort: 3000
           securityContext:

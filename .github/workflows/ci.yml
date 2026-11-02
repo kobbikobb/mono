@@ -87,6 +87,12 @@ jobs:
           done
       - run: |
           timeout 30 sh -c 'until curl -sf localhost:8080/api/users; do sleep 1; done'
+      - name: Users survive an API restart
+        run: |
+          curl -sf -X POST -H 'content-type: application/json' -d '{"name":"persisted"}' localhost:8080/api/users
+          kubectl -n mono rollout restart deployment/mono-api
+          kubectl -n mono rollout status deployment/mono-api --timeout=120s
+          timeout 30 sh -c 'until curl -sf localhost:8080/api/users | grep persisted; do sleep 1; done'
       - run: npm ci
         working-directory: e2e
       - run: npx playwright install --with-deps chromium
