@@ -3,6 +3,9 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ .Release.Name }}
+  annotations:
+    # Makes the Route OpenShift generates serve HTTPS; other ingress controllers ignore it.
+    route.openshift.io/termination: edge
 spec:
   {{- with .Values.ingress.className }}
   ingressClassName: {{ . }}
