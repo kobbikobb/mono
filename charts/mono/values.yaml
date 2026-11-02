@@ -16,9 +16,7 @@ ingress:
   className: ""
   host: ""
 
-# Optional PostgreSQL. Uses Red Hat's image from quay.io instead of Docker Hub's: it runs
-# under the random UID OpenShift assigns (the official image expects a fixed user) and quay.io
-# does not rate-limit pulls from shared clusters.
+# Optional PostgreSQL, from quay.io because the Docker Hub image can't run under OpenShift's random UID.
 postgres:
   enabled: false
   image:
