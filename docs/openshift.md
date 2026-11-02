@@ -19,32 +19,37 @@ The images and chart are public on ghcr.io, so no registry login or pull secret 
 1. Sign up at https://developers.redhat.com/developer-sandbox and start the OpenShift sandbox.
    The sandbox sleeps after inactivity and is deleted after 30 days.
 
-2. Open the web console, click your username (top right) → **Copy login command** →
+2. Open the sandbox's OpenShift web console. From the Red Hat Hybrid Cloud Console
+   (console.redhat.com), choose **Red Hat OpenShift** → **Developer Sandbox** → **Launch**.
+   This opens a different site, `console-openshift-console.apps.<cluster>`, with the
+   OpenShift console (not the Red Hat account page with your name and Org ID).
+
+3. In the OpenShift console, click your username (top right) → **Copy login command** →
    **Display Token**, and run the `oc login --token=... --server=...` command it shows:
 
         oc login --token=sha256~... --server=https://api.<cluster>:6443
 
-3. Check you are in your project (named `<username>-dev`):
+4. Check you are in your project (named `<username>-dev`):
 
         oc project
 
-4. Choose a hostname under the sandbox's apps domain (derived from the cluster API URL):
+5. Choose a hostname under the sandbox's apps domain (derived from the cluster API URL):
 
         HOST="mono-$(oc project -q).$(oc whoami --show-server | sed -E 's#https://api\.(.*):6443#apps.\1#')"
         echo "$HOST"
 
-5. Install the published chart:
+6. Install the published chart:
 
         helm install mono oci://ghcr.io/kobbikobb/charts/mono \
           --set ingress.enabled=true --set ingress.host="$HOST"
 
    OpenShift converts the Ingress rule for that host into a Route.
 
-6. Wait for the pods:
+7. Wait for the pods:
 
         oc rollout status deployment/mono-api deployment/mono-web
 
-7. Open the app at `http://$HOST` and check the API:
+8. Open the app at `http://$HOST` and check the API:
 
         curl "http://$HOST/api/users"
 
