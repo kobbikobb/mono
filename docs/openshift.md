@@ -35,7 +35,8 @@ The images and chart are public on ghcr.io, so no registry login or pull secret 
 
         oc project
 
-4. Choose a hostname under the sandbox's apps domain. The chart needs a host to create a Route:
+4. Choose a hostname under the sandbox's apps domain. Without a host in the Ingress,
+   OpenShift creates no Route:
 
         HOST="mono-$(oc project -q).$(oc whoami --show-server | sed -E 's#https://api\.(.*):6443#apps.\1#')"
         echo "$HOST"
@@ -56,7 +57,7 @@ The images and chart are public on ghcr.io, so no registry login or pull secret 
 - `ImagePullBackOff`: `oc describe pod`; check the sandbox can reach ghcr.io.
 - Pod rejected by a security policy: `oc get events`; the containers must run as non-root
   without fixed UIDs.
-- Route missing: `oc get ingress,route`; the Ingress needs `ingress.host` to become a Route.
+- No Route (`oc get route` is empty): the Ingress has no host. Reinstall with `ingress.host`.
 
 ## Clean up
 
