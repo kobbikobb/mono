@@ -1,5 +1,9 @@
-{{- if and (gt (int .Values.api.replicas) 1) (not .Values.postgres.enabled) }}
-{{- fail "api.replicas must be 1 unless postgres.enabled: the API keeps users in memory" }}
+{{- $external := or .Values.database.url .Values.database.existingSecret }}
+{{- if and .Values.postgres.enabled $external }}
+{{- fail "use either postgres.enabled or database.url/database.existingSecret, not both" }}
+{{- end }}
+{{- if and (gt (int .Values.api.replicas) 1) (not .Values.postgres.enabled) (not $external) }}
+{{- fail "api.replicas must be 1 without a database: the API keeps users in memory" }}
 {{- end }}
 apiVersion: apps/v1
 kind: Deployment
@@ -27,6 +31,13 @@ spec:
                   key: password
             - name: DATABASE_URL
               value: postgres://mono:$(PGPASSWORD)@{{ .Release.Name }}-postgres:5432/mono
+          {{- else if $external }}
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.existingSecret | default (printf "%s-database" .Release.Name) }}
+                  key: url
           {{- end }}
           ports:
             - containerPort: 3000

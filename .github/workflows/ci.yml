@@ -49,6 +49,8 @@ jobs:
       - uses: actions/checkout@v4
       - run: helm lint charts/mono
       - run: helm template mono charts/mono --set ingress.enabled=true,postgres.enabled=true > /dev/null
+      - run: helm template mono charts/mono --set database.url=postgres://u:p@h/d,api.replicas=2 > /dev/null
+      - run: helm template mono charts/mono --set database.existingSecret=mine > /dev/null
 
   e2e-kind:
     runs-on: ubuntu-latest

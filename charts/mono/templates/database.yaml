@@ -1,0 +1,11 @@
+{{- if .Values.database.url }}
+{{- if not .Values.database.existingSecret }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-database
+type: Opaque
+stringData:
+  url: {{ .Values.database.url | quote }}
+{{- end }}
+{{- end }}
