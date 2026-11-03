@@ -3,12 +3,18 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ .Release.Name }}
+  {{- if .Values.ingress.tls }}
   annotations:
-    # Makes the Route OpenShift generates serve HTTPS; other ingress controllers ignore it.
     route.openshift.io/termination: edge
+  {{- end }}
 spec:
   {{- with .Values.ingress.className }}
   ingressClassName: {{ . }}
+  {{- end }}
+  {{- if .Values.ingress.tls }}
+  # No secretName: the OpenShift router serves its default wildcard certificate.
+  tls:
+    - hosts: [{{ required "ingress.tls needs ingress.host" .Values.ingress.host | quote }}]
   {{- end }}
   rules:
     - {{- with .Values.ingress.host }}

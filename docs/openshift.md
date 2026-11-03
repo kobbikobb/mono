@@ -36,17 +36,17 @@ The images and chart are public on ghcr.io, so no registry login or pull secret 
 5. Install the published chart:
 
         helm install mono oci://ghcr.io/kobbikobb/charts/mono \
-          --set ingress.enabled=true --set ingress.host="$HOST"
+          --set ingress.enabled=true --set ingress.host="$HOST" --set ingress.tls=true
 
-   OpenShift converts the Ingress rule for that host into a Route.
+   OpenShift converts the Ingress rule for that host into a Route that serves HTTPS.
 
 6. Wait for the pods:
 
         oc rollout status deployment/mono-api deployment/mono-web
 
-7. Open the app at `http://$HOST` and check the API:
+7. Open the app at `https://$HOST` and check the API:
 
-        curl "http://$HOST/api/users"
+        curl "https://$HOST/api/users"
 
 ## Troubleshooting
 
