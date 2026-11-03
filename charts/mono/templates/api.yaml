@@ -2,6 +2,9 @@
 {{- if and .Values.postgres.enabled $external }}
 {{- fail "use either postgres.enabled or database.url/database.existingSecret, not both" }}
 {{- end }}
+{{- if and .Values.database.url .Values.database.existingSecret }}
+{{- fail "set either database.url or database.existingSecret, not both" }}
+{{- end }}
 {{- if and (gt (int .Values.api.replicas) 1) (not .Values.postgres.enabled) (not $external) }}
 {{- fail "api.replicas must be 1 without a database: the API keeps users in memory" }}
 {{- end }}
@@ -18,6 +21,11 @@ spec:
     metadata:
       labels:
         app: {{ .Release.Name }}-api
+      {{- if .Values.database.url }}
+      annotations:
+        # Env vars are read at startup, so a changed URL must roll the pods.
+        checksum/database-url: {{ .Values.database.url | sha256sum }}
+      {{- end }}
     spec:
       containers:
         - name: api
