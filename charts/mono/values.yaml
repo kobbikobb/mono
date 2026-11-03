@@ -22,5 +22,5 @@ postgres:
   enabled: false
   image:
     repository: quay.io/sclorg/postgresql-16-c9s
-    tag: latest
+    tag: "20261027"
   storage: 1Gi

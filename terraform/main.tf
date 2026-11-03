@@ -28,6 +28,7 @@ resource "helm_release" "mono" {
 
   set = [
     { name = "ingress.enabled", value = "true" },
+    { name = "postgres.enabled", value = "true" },
     { name = "api.image.tag", value = var.image_tag },
     { name = "web.image.tag", value = var.image_tag },
   ]
