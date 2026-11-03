@@ -81,6 +81,8 @@ jobs:
           --set ingress.enabled=true,ingress.className=nginx
           --set postgres.enabled=true
       - run: kubectl -n mono exec deploy/mono-postgres -- psql -U mono -c 'select 1'
+      - name: Only the API can reach Postgres
+        run: '! kubectl -n mono exec deploy/mono-web -- nc -zw3 mono-postgres 5432'
       # OpenShift runs containers with an arbitrary UID; the images must not depend on a fixed one.
       - run: |
           for d in api web; do
