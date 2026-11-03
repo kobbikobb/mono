@@ -68,6 +68,8 @@ jobs:
       - run: |
           kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
           kubectl wait -n ingress-nginx --for=condition=ready pod -l app.kubernetes.io/component=controller --timeout=120s
+          # The pod can be ready before the admission webhook accepts connections.
+          kubectl wait -n ingress-nginx --for=jsonpath='{.subsets[0].addresses[0].ip}' endpoints/ingress-nginx-controller-admission --timeout=60s
       # Mimic OpenShift's restricted SCC: enforce the restricted Pod Security level.
       - run: |
           kubectl create namespace mono
