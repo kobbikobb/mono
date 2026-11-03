@@ -1,59 +1,52 @@
 # Run on the OpenShift Developer Sandbox
 
-The [Developer Sandbox](https://developers.redhat.com/developer-sandbox) is a free,
-shared OpenShift cluster from Red Hat. It enforces the restricted security policy
-(arbitrary UID, no privileges), so it is a good check that the images and chart work on OpenShift.
+Deploys this app to the free [Developer Sandbox](https://developers.redhat.com/developer-sandbox),
+a shared OpenShift cluster from Red Hat. About 15-20 minutes the first time (one timed run: 17).
 
-Total time: about 15-20 minutes the first time (sign-up and sandbox start take most of it).
-With an existing sandbox and the tools installed, about 5 minutes.
-
-## Prerequisites
-
-- A Red Hat account (free).
-- [`oc`](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/cli_tools/openshift-cli-oc) and [`helm`](https://helm.sh/docs/intro/install/) installed.
-
-The images and chart are public on ghcr.io, so no registry login or pull secret is needed.
+You need a Red Hat account (free), [`helm`](https://helm.sh/docs/intro/install/) and the
+OpenShift CLI `oc` (macOS: `brew install openshift-cli`).
 
 ## Steps
 
-1. Sign up at https://developers.redhat.com/developer-sandbox and start the OpenShift sandbox.
-   The sandbox sleeps after inactivity and is deleted after 30 days.
+1. **Start the sandbox** at https://developers.redhat.com/developer-sandbox
+   (**Start your sandbox for free**). It is deleted after 30 days.
 
-2. Open the web console, click your username (top right) → **Copy login command** →
-   **Display Token**, and run the `oc login --token=... --server=...` command it shows:
+2. **Open its console**: on the same page, click **Launch** under
+   **Build and deploy your apps to Kubernetes**. Do not click **Create cluster** anywhere;
+   those clusters are paid.
 
-        oc login --token=sha256~... --server=https://api.<cluster>:6443
-
-3. Check you are in your project (named `<username>-dev`):
+3. **Log in from your terminal**: in the console, click your username (top right) →
+   **Copy login command** → **Display Token**, and run the `oc login ...` command it shows.
+   This switches your kubectl context to the sandbox, so switch back when you are done.
+   Check it worked:
 
         oc project
 
-4. Choose a hostname under the sandbox's apps domain (derived from the cluster API URL):
+4. **Pick a web address for the app**:
 
         HOST="mono-$(oc project -q).$(oc whoami --show-server | sed -E 's#https://api\.(.*):6443#apps.\1#')"
         echo "$HOST"
 
-5. Install the published chart:
+   *Why?* OpenShift only publishes an app on the internet if you give it an address.
+   Without one, the install fails with `ingress.tls needs ingress.host`. The address must end
+   with the sandbox's domain (`apps.<cluster>...`), which the command above works out for you.
 
-        helm install mono oci://ghcr.io/kobbikobb/charts/mono \
+5. **Install the app** (the images and chart are public, no login needed):
+
+        helm install mono oci://ghcr.io/kobbikobb/charts/mono --wait \
           --set ingress.enabled=true --set ingress.host="$HOST" --set ingress.tls=true
 
-   OpenShift converts the Ingress rule for that host into a Route that serves HTTPS.
+   OpenShift converts the Ingress into a Route that serves HTTPS.
 
-6. Wait for the pods:
-
-        oc rollout status deployment/mono-api deployment/mono-web
-
-7. Open the app at `https://$HOST` and check the API:
+6. **Open it**: go to `https://$HOST`, or check the API:
 
         curl "https://$HOST/api/users"
 
-## Troubleshooting
+## Problems
 
-- `ImagePullBackOff`: check the image name and that the sandbox can reach ghcr.io (`oc describe pod`).
-- Pod rejected by a security policy: check `oc get events`; the containers must run as non-root
-  without fixed UIDs.
-- Route missing: `oc get ingress,route`; the Ingress needs a host (`ingress.host`) to become a Route.
+- `ingress.tls needs ingress.host`: `$HOST` is empty. Redo step 4.
+- `ImagePullBackOff`: `oc describe pod`, and check the sandbox can reach ghcr.io.
+- A pod is rejected: `oc get events`.
 
 ## Clean up
 
