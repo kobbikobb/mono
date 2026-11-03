@@ -68,6 +68,8 @@ jobs:
       - run: |
           kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
           kubectl wait -n ingress-nginx --for=condition=ready pod -l app.kubernetes.io/component=controller --timeout=120s
+          # The pod can be ready before the admission webhook accepts connections.
+          kubectl wait -n ingress-nginx --for=jsonpath='{.subsets[0].addresses[0].ip}' endpoints/ingress-nginx-controller-admission --timeout=60s
       # Mimic OpenShift's restricted SCC: enforce the restricted Pod Security level.
       - run: |
           kubectl create namespace mono
@@ -87,6 +89,12 @@ jobs:
           done
       - run: |
           timeout 30 sh -c 'until curl -sf localhost:8080/api/users; do sleep 1; done'
+      - name: Users survive an API restart
+        run: |
+          curl -sf -X POST -H 'content-type: application/json' -d '{"name":"persisted"}' localhost:8080/api/users
+          kubectl -n mono rollout restart deployment/mono-api
+          kubectl -n mono rollout status deployment/mono-api --timeout=120s
+          timeout 30 sh -c 'until curl -sf localhost:8080/api/users | grep persisted; do sleep 1; done'
       - run: npm ci
         working-directory: e2e
       - run: npx playwright install --with-deps chromium
