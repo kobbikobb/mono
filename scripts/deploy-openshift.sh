@@ -11,7 +11,7 @@ release="mono"
 namespace="mono"
 context="microshift"
 
-for cmd in docker minc oc helm; do
+for cmd in docker minc oc helm curl; do
   command -v "$cmd" >/dev/null || { echo "$cmd is not installed, see the README" >&2; exit 1; }
 done
 
@@ -81,6 +81,18 @@ fi
 
 mapping=$("$runtime" port microshift 80/tcp 2>/dev/null | head -1 || true)
 port="${mapping##*:}"
+url="http://$host:${port:-9080}/api/users"
+
+# The Route reports Admitted before the router has endpoints; wait for traffic.
+for _ in $(seq 1 30); do
+  curl -fsS --max-time 5 "$url" >/dev/null 2>&1 && break
+  sleep 2
+done
+if ! curl -fsS --max-time 5 "$url" >/dev/null; then
+  echo "The Route is admitted but $url is not serving" >&2
+  exit 1
+fi
+
 echo
 echo "Web: http://$host:${port:-9080}/"
-echo "API: http://$host:${port:-9080}/api/users"
+echo "API: $url"
