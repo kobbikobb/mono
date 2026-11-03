@@ -15,6 +15,7 @@ ingress:
   enabled: false
   className: ""
   host: ""
+  tls: false
 
 # Optional PostgreSQL, from quay.io because the Docker Hub image can't run under OpenShift's random UID.
 postgres:
