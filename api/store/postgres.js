@@ -7,6 +7,7 @@ export const createPostgresStore = async (connectionString, log) => {
 
   // Replicas start together; the advisory lock serializes schema creation and seeding.
   const client = await pool.connect();
+  let broken = false;
   try {
     await client.query("BEGIN");
     await client.query("SELECT pg_advisory_xact_lock(1)");
@@ -14,10 +15,13 @@ export const createPostgresStore = async (connectionString, log) => {
     await client.query(queries.seedUsers);
     await client.query("COMMIT");
   } catch (err) {
-    await client.query("ROLLBACK");
+    // Keep the original error even if the rollback fails (e.g. a dropped connection).
+    await client.query("ROLLBACK").catch(() => {
+      broken = true;
+    });
     throw err;
   } finally {
-    client.release();
+    client.release(broken);
   }
 
   return {
