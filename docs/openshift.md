@@ -28,8 +28,8 @@ OpenShift CLI `oc` (macOS: `brew install openshift-cli`).
         echo "$HOST"
 
    *Why?* OpenShift only publishes an app on the internet if you give it an address.
-   Without one, the install succeeds but nothing is reachable. The address must end with the
-   sandbox's domain (`apps.<cluster>...`), which the command above works out for you.
+   Without one, the install fails with `ingress.tls needs ingress.host`. The address must end
+   with the sandbox's domain (`apps.<cluster>...`), which the command above works out for you.
 
 5. **Install the app** (the images and chart are public, no login needed):
 
@@ -44,8 +44,7 @@ OpenShift CLI `oc` (macOS: `brew install openshift-cli`).
 
 ## Problems
 
-- `oc get route` is empty: you installed without `ingress.host`. Run step 5 again as
-  `helm upgrade` with the host.
+- `ingress.tls needs ingress.host`: `$HOST` is empty. Redo step 4.
 - `ImagePullBackOff`: `oc describe pod`, and check the sandbox can reach ghcr.io.
 - A pod is rejected: `oc get events`.
 
