@@ -38,8 +38,9 @@ OpenShift CLI `oc` (macOS: `brew install openshift-cli`).
 
    OpenShift converts the Ingress into a Route that serves HTTPS.
 
-   Users are kept in memory and lost on restart. To store them in PostgreSQL (a 1Gi volume,
-   password generated for you), add `--set postgres.enabled=true`.
+   Users are kept in memory and lost on restart. For a demo database (one PostgreSQL pod on a
+   1Gi volume, no backups), add `--set postgres.enabled=true`. For real use, provision a database
+   yourself and pass its connection string with `--set database.url=...`.
 
 6. **Open it**: go to `https://$HOST`, or check the API:
 
