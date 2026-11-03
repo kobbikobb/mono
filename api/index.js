@@ -19,12 +19,26 @@ const createMemoryStore = () => {
 
 const createPostgresStore = async (connectionString) => {
   const pool = new pg.Pool({ connectionString });
-  await pool.query(
-    "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name TEXT NOT NULL)",
-  );
-  await pool.query(
-    "INSERT INTO users (name) SELECT 'mike' WHERE NOT EXISTS (SELECT 1 FROM users)",
-  );
+  pool.on("error", (err) => fastify.log.error(err));
+
+  // Replicas start together; the advisory lock serializes schema creation and seeding.
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock(1)");
+    await client.query(
+      "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name TEXT NOT NULL)",
+    );
+    await client.query(
+      "INSERT INTO users (name) SELECT 'mike' WHERE NOT EXISTS (SELECT 1 FROM users)",
+    );
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
   return {
     list: async () => (await pool.query("SELECT id, name FROM users ORDER BY id")).rows,
     add: async (name) =>
