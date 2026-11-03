@@ -30,6 +30,10 @@ spec:
           {{- end }}
           ports:
             - containerPort: 3000
+          # The API listens only after its store is ready, so a rollout waits for Postgres.
+          readinessProbe:
+            tcpSocket:
+              port: 3000
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false
