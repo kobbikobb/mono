@@ -82,7 +82,12 @@ jobs:
           --set postgres.enabled=true
       - run: kubectl -n mono exec deploy/mono-postgres -- psql -U mono -c 'select 1'
       - name: Only the API can reach Postgres
-        run: '! kubectl -n mono exec deploy/mono-web -- nc -zw3 mono-postgres 5432'
+        run: |
+          # Positive control: the probe works from the web pod, so a failure below is the policy.
+          kubectl -n mono exec deploy/mono-web -- nc -zw3 mono-api 3000
+          if kubectl -n mono exec deploy/mono-web -- nc -zw3 mono-postgres 5432; then
+            echo "web can reach postgres" && exit 1
+          fi
       # OpenShift runs containers with an arbitrary UID; the images must not depend on a fixed one.
       - run: |
           for d in api web; do
