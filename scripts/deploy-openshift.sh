@@ -18,7 +18,7 @@ done
 # Creates the cluster or restarts an existing one. The overlay cache is mounted
 # read-only and breaks CRI-O, so disable it.
 minc --provider "$runtime" create --disable-overlay-cache
-kubectl config use-context "$context"
+oc config use-context "$context"
 oc --context "$context" wait --for=condition=Ready node --all --timeout=180s
 
 "$runtime" build -t "$api_image" "$root/api"
