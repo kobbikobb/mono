@@ -23,7 +23,7 @@ Runs the same chart with a Route on a local MicroShift cluster managed by
     ./scripts/curl-api.sh
 
 Requires Docker, `oc`, `helm`, and `minc`; no Red Hat pull secret is needed.
-Stop the cluster with `minc --provider docker delete`.
+Rerunning the script recreates the cluster. Stop it with `minc --provider docker delete`.
 
 Full OpenShift converts an Ingress to a Route, but MicroShift does not, so the
 chart has a separate `route.enabled` value.

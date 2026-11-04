@@ -15,8 +15,11 @@ for cmd in docker minc oc helm curl; do
   command -v "$cmd" >/dev/null || { echo "$cmd is not installed, see the README" >&2; exit 1; }
 done
 
-# Creates the cluster or restarts an existing one. The overlay cache is mounted
-# read-only and breaks CRI-O, so disable it.
+# The overlay cache is mounted read-only and breaks CRI-O, so create the cluster without it.
+# An existing container keeps the mounts it was created with, so recreate it.
+if "$runtime" container inspect microshift >/dev/null 2>&1; then
+  minc --provider "$runtime" delete
+fi
 minc --provider "$runtime" create --disable-overlay-cache
 oc config use-context "$context"
 oc --context "$context" wait --for=condition=Ready node --all --timeout=180s
