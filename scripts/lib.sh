@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 # Shared helpers for the local scripts.
 
+# Prints "https" when the mono Route terminates TLS, otherwise "http".
+api_scheme() {
+  local kube tls
+  kube=$(command -v kubectl || command -v oc || true)
+  if [[ -n "$kube" ]]; then
+    tls=$("$kube" -n mono get route mono -o jsonpath='{.spec.tls.termination}' 2>/dev/null || true)
+  fi
+  if [[ -n "${tls:-}" ]]; then printf https; else printf http; fi
+}
+
 # Prints a host-reachable "host:port" for the mono Ingress or Route, or nothing.
 # macOS/Windows run containers in a VM, so the ingress IP is not reachable and
 # cloud-provider-kind publishes the gateway on a host port instead.
@@ -17,8 +27,9 @@ api_target() {
     if [[ -n "$host" ]]; then
       if [[ "$("$kube" config current-context 2>/dev/null)" == microshift ]] &&
         command -v docker >/dev/null; then
-        local mapping
-        mapping=$(docker port microshift 80/tcp 2>/dev/null | head -1 || true)
+        local mapping containerport=80
+        [[ "$(api_scheme)" == https ]] && containerport=443
+        mapping=$(docker port microshift "$containerport/tcp" 2>/dev/null | head -1 || true)
         port="${mapping##*:}"
       fi
       printf '%s%s' "$host" "${port:+:$port}"

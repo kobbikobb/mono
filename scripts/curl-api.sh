@@ -17,6 +17,10 @@ if [[ -z "$target" ]]; then
   exit 1
 fi
 
-echo "curl http://$target$path" >&2
-curl -sS -i -m 5 "$@" "http://$target$path"
+scheme="$(api_scheme)"
+echo "curl $scheme://$target$path" >&2
+# A TLS Route on MicroShift uses a self-signed certificate.
+insecure=()
+[[ "$scheme" == https ]] && insecure=(-k)
+curl -sS -i -m 5 ${insecure[@]+"${insecure[@]}"} "$@" "$scheme://$target$path"
 echo
