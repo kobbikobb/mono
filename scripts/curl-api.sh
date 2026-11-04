@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Curls the mono ingress using a host-reachable address.
 # Usage: ./scripts/curl-api.sh [path] [extra curl args...]   (default path: /api/users)
+# A TLS Route on local MicroShift has a self-signed certificate: pass -k to accept it.
 set -euo pipefail
 
 dir="$(cd "$(dirname "$0")" && pwd)"
@@ -19,8 +20,5 @@ fi
 
 scheme="$(api_scheme)"
 echo "curl $scheme://$target$path" >&2
-# A TLS Route on MicroShift uses a self-signed certificate.
-insecure=()
-[[ "$scheme" == https ]] && insecure=(-k)
-curl -sS -i -m 5 ${insecure[@]+"${insecure[@]}"} "$@" "$scheme://$target$path"
+curl -sS -i -m 5 "$@" "$scheme://$target$path"
 echo
