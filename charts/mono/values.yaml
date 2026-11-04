@@ -17,8 +17,9 @@ ingress:
   host: ""
   tls: false
 
-# Demo only: a single PostgreSQL pod with no backups or failover. Image is from quay.io because the
-# Docker Hub image can't run under OpenShift's random UID.
+# Demo only: a single PostgreSQL pod with no backups or failover. For real use, provision a database
+# yourself and set database.url or database.existingSecret. Image is from quay.io because the Docker Hub
+# image can't run under OpenShift's random UID.
 postgres:
   enabled: false
   image:
