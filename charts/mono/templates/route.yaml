@@ -7,7 +7,6 @@ spec:
   {{- with .Values.route.host }}
   host: {{ . | quote }}
   {{- end }}
-  path: {{ .Values.route.path }}
   to:
     kind: Service
     name: {{ .Release.Name }}-web

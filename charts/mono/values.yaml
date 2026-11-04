@@ -38,5 +38,4 @@ database:
 route:
   enabled: false
   host: ""
-  path: /
   tls: false
