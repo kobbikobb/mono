@@ -24,3 +24,10 @@ postgres:
     repository: quay.io/sclorg/postgresql-16-c9s
     tag: "20261027"
   storage: 1Gi
+
+# Use your own PostgreSQL instead of postgres.enabled. Set one of:
+#   url:            a connection string, e.g. postgres://user:pass@host:5432/db (stored in a Secret)
+#   existingSecret: name of a Secret that has the connection string under the key "url"
+database:
+  url: ""
+  existingSecret: ""
