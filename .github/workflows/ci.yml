@@ -51,6 +51,7 @@ jobs:
       - run: helm template mono charts/mono --set ingress.enabled=true,postgres.enabled=true > /dev/null
       - run: helm template mono charts/mono --set database.url=postgres://u:p@h/d,api.replicas=2 > /dev/null
       - run: helm template mono charts/mono --set database.existingSecret=mine > /dev/null
+      - run: helm template mono charts/mono --set route.enabled=true > /dev/null
 
   e2e-kind:
     runs-on: ubuntu-latest
@@ -110,3 +111,21 @@ jobs:
         working-directory: e2e
       - run: npm test
         working-directory: e2e
+
+  e2e-openshift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install minc and oc
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL https://github.com/minc-org/minc/releases/latest/download/minc_linux_amd64 -o "$HOME/.local/bin/minc"
+          chmod +x "$HOME/.local/bin/minc"
+          curl -fsSL https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz | tar -xz -C "$HOME/.local/bin" oc
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: ./scripts/deploy-openshift.sh
+      - name: Verify through the Route
+        run: |
+          host=$(oc -n mono get route mono -o jsonpath='{.spec.host}')
+          curl -fsS "http://$host:9080/api/users" | grep -q mike

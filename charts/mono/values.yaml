@@ -10,7 +10,9 @@ web:
     tag: latest
   replicas: 1
 
-# On OpenShift an Ingress is converted to a Route automatically.
+# Enable exactly one of ingress or route.
+# Full OpenShift converts an Ingress to a Route, but MicroShift does not, so use
+# route on MicroShift.
 ingress:
   enabled: false
   className: ""
@@ -33,3 +35,8 @@ postgres:
 database:
   url: ""
   existingSecret: ""
+
+route:
+  enabled: false
+  host: ""
+  tls: false
